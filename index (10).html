@@ -1,0 +1,1137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BETA ONE - Advanced Lung Diagnostic System</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f0f1f3, #f8f8fb);
+            color: #e2e8f0;
+            overflow-x: hidden;
+        }
+
+        /* Login Page Specific Styles */
+        #login-container {
+            transition: opacity 0.5s ease-in-out;
+        }
+        #login-card {
+            transform: scale(0.95);
+            opacity: 0;
+            transition: all 0.5s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+        }
+        #login-card.scale-100 {
+            transform: scale(1);
+            opacity: 1;
+        }
+
+        .container {
+            max-width: 1800px;
+            margin: 0 auto;
+            padding: 1rem;
+        }
+
+        /* Header styles */
+        header {
+            background: linear-gradient(90deg, #000000, #000000);
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgb(255, 255, 255);
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(94, 234, 212, 0.2);
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .logo-icon {
+            background: rgba(148, 15, 15, 0.1);
+            padding: 0.75rem;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(5px);
+        }
+
+        .logo-text h1 {
+            font-size: 2rem;
+            font-weight: 800;
+            letter-spacing: 1px;
+            background: linear-gradient(to right, #cb07b1, #bc27b5);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .logo-text p {
+            font-size: 0.9rem;
+            color: #ae5b1a;
+        }
+
+        /* Status indicator */
+        #connection-status {
+            padding: 0.75rem 1.5rem;
+            border-radius: 2rem;
+            font-weight: 600;
+            background: #b91c1c;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        #connection-status.connected {
+            background: #16a34a;
+        }
+
+        /* Grid layout */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1fr 1.5fr 1fr;
+            gap: 1.5rem;
+            height: calc(100vh - 180px);
+        }
+
+        /* Card styles */
+        .card {
+            background: rgba(30, 41, 59, 0.7);
+            border-radius: 16px;
+            padding: 1.5rem;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(94, 234, 212, 0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3);
+            border-color: rgba(94, 234, 212, 0.3);
+        }
+
+        .card-header {
+            font-size: 1.4rem;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 2px solid rgba(94, 234, 212, 0.3);
+            color: #e9e6ef;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .card-header.clickable {
+            cursor: pointer;
+            transition: color 0.3s ease;
+        }
+
+        .card-header.clickable:hover {
+            color: #67e8f9;
+        }
+
+        /* Connection panel */
+        #port-select {
+            background: rgba(230, 81, 0, 0.7);
+            border: 1px solid rgba(94, 234, 212, 0.2);
+            color: #e2e8f0;
+            border-radius: 12px;
+            padding: 0.9rem;
+            width: 100%;
+            margin-bottom: 1rem;
+            font-size: 1rem;
+        }
+
+        #port-select:focus {
+            outline: none;
+            border-color: #5eead4;
+        }
+
+        .btn {
+            padding: 1rem;
+            border-radius: 12px;
+            font-weight: 600;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: none;
+            font-size: 1.1rem;
+            width: 100%;
+            margin-bottom: 0.75rem;
+        }
+
+        .btn-primary {
+            background: linear-gradient(90deg, #f7f7f7, #fffafa);
+            color: rgb(241, 241, 241);
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(90deg, #0fb853, #29d36d);
+            transform: translateY(-3px);
+        }
+
+        .btn-secondary {
+            background: rgba(30, 41, 59, 0.9);
+            color: #e2e8f0;
+            border: 1px solid rgba(94, 234, 212, 0.3);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(51, 65, 85, 0.9);
+            transform: translateY(-3px);
+        }
+
+        /* Microphone grid */
+        .mic-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+        }
+
+        .mic-btn {
+            background: rgba(15, 23, 42, 0.7);
+            border: 1px solid rgba(94, 234, 212, 0.2);
+            border-radius: 12px;
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .mic-btn:hover {
+            background: rgba(30, 41, 59, 0.9);
+            border-color: #5eead4;
+            transform: translateY(-3px);
+        }
+
+        .mic-btn.active {
+            background: rgba(56, 189, 248, 0.2);
+            border-color: #38bdf8;
+        }
+
+        .mic-indicator {
+            position: absolute;
+            top: 0.75rem;
+            right: 0.75rem;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #64748b;
+        }
+
+        .mic-indicator.connected {
+            background: #10b981;
+            box-shadow: 0 0 8px #10b981;
+        }
+
+        .mic-name {
+            font-weight: 600;
+            margin-top: 0.5rem;
+            font-size: 1.1rem;
+        }
+
+        .mic-label {
+            font-size: 0.85rem;
+            color: #94a3b8;
+            margin-top: 0.25rem;
+        }
+
+        /* Analysis panel */
+        .analysis-content {
+            background: rgba(15, 23, 42, 0.5);
+            border-radius: 12px;
+            padding: 1.25rem;
+            flex-grow: 1;
+            overflow-y: auto;
+        }
+
+        .metric {
+            margin-bottom: 1.25rem;
+            padding-bottom: 1.25rem;
+            border-bottom: 1px solid rgba(94, 234, 212, 0.1);
+        }
+
+        .metric:last-child {
+            margin-bottom: 0;
+            padding-bottom: 0;
+            border-bottom: none;
+        }
+
+        .metric-label {
+            font-size: 0.95rem;
+            color: #94a3b8;
+            margin-bottom: 0.5rem;
+        }
+
+        .metric-value {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #67e8f9;
+        }
+
+        .metric-bar {
+            height: 6px;
+            background: rgba(30, 41, 59, 0.7);
+            border-radius: 3px;
+            margin-top: 0.5rem;
+            overflow: hidden;
+        }
+
+        .metric-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #f0f3f4, #e4e8ea);
+            border-radius: 3px;
+        }
+
+        /* 2D Lung Visualization */
+        #lung-viz-container {
+            position: relative;
+            border-radius: 16px;
+            overflow: hidden;
+            flex-grow: 1;
+            box-shadow: 0 0 30px rgba(8, 145, 178, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(15, 23, 42, 0.5);
+            height: 300px;
+            min-height: 250px;
+        }
+
+        #lung-svg-container {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 0.5rem;
+        }
+
+        #lung-svg {
+            height: 100%;
+            width: auto;
+        }
+
+        #lung-svg path {
+            fill: #7dd3fc;
+            stroke: #413330;
+            stroke-width: 0.2;
+            transition: fill 0.3s ease-in-out;
+        }
+
+        /* Highlight style for lung regions */
+        #lung-svg path.highlighted {
+            fill: #ef4444 !important;
+        }
+
+        /* Charts */
+        .chart-container {
+            background: rgba(15, 23, 42, 0.5);
+            border-radius: 12px;
+            height: 250px;
+            margin-bottom: 1.5rem;
+            position: relative;
+        }
+
+        .chart-container:last-child {
+            margin-bottom: 0;
+        }
+
+        /* Heatmap */
+        .heatmap-container {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 0.5rem;
+        }
+
+        .heatmap-cell {
+            background: rgba(15, 23, 42, 0.7);
+            border-radius: 8px;
+            padding: 0.75rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .heatmap-cell.active {
+            background: rgba(56, 189, 248, 0.3);
+            box-shadow: 0 0 10px rgba(243, 246, 247, 0.5);
+        }
+
+        .heatmap-value {
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin-top: 0.5rem;
+        }
+
+        /* Console */
+        .serial-console {
+            background: rgba(15, 23, 42, 0.5);
+            border-radius: 12px;
+            padding: 1.25rem;
+            font-family: 'Courier New', monospace;
+            font-size: 0.95rem;
+            flex-grow: 1;
+            overflow-y: auto;
+            color: #86efac;
+            line-height: 1.6;
+            display: flex;
+            flex-direction: column-reverse;
+            justify-content: flex-end;
+        }
+
+        .console-line {
+            margin-bottom: 0.25rem;
+        }
+
+        .console-line:first-child {
+            margin-bottom: 0;
+        }
+
+        /* Full screen display for charts/heatmap */
+        .main-display-area {
+            background: rgba(30, 41, 59, 0.9);
+            border-radius: 16px;
+            padding: 2rem;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(94, 234, 212, 0.1);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 20;
+            transition: opacity 0.5s ease-in-out;
+            opacity: 0;
+        }
+
+        .main-display-area.active {
+            display: flex;
+            opacity: 1;
+        }
+
+        .main-display-area .chart-container,
+        .main-display-area .heatmap-container {
+            width: 90%;
+            max-width: 800px;
+            height: auto;
+            margin-bottom: 1rem;
+        }
+
+        .main-display-area .chart-container canvas {
+            height: 300px !important;
+            width: 100% !important;
+        }
+
+        .main-display-area .heatmap-container {
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+        }
+
+        .main-display-area .display-header {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #e9e8ec;
+            margin-bottom: 1.5rem;
+            text-align: center;
+        }
+
+        .main-display-area .back-btn {
+            margin-top: 1.5rem;
+            background: #f87171;
+            color: white;
+            padding: 0.8rem 1.5rem;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        .main-display-area .back-btn:hover {
+            background: #ef4444;
+        }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            padding: 1.5rem 0;
+            margin-top: 2rem;
+            color: #94a3b8;
+            font-size: 0.9rem;
+            border-top: 1px solid rgba(94, 234, 212, 0.1);
+        }
+
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+                height: auto;
+            }
+
+            #lung-viz-container {
+                height: 300px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Login Screen -->
+    <div id="login-container" class="fixed inset-0 bg-gradient-to-br from-white-900 to-indigo-900 flex items-center justify-center z-50">
+        <div class="bg-gray-800 bg-opacity-80 backdrop-filter backdrop-blur-lg p-10 rounded-2xl shadow-xl border border-gray-700 w-96 transform transition-all duration-500 ease-in-out scale-95 opacity-0" id="login-card">
+            <div class="flex justify-center mb-6">
+                <div class="logo-icon bg-white bg-opacity-10 p-3 rounded-full">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-cyan-300" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd" />
+                    </svg>
+                </div>
+            </div>
+            <h1 class="text-3xl font-bold text-center mb-8 text-white">BETA ONE Login</h1>
+            <div class="mb-5">
+                <label for="username" class="block text-gray-300 text-sm font-semibold mb-2">Username:</label>
+                <input type="text" id="username" class="w-full p-3 rounded-lg bg-gray-700 text-white border border-gray-600 focus:outline-none focus:border-cyan-400 transition duration-300" placeholder="Enter your username">
+            </div>
+            <div class="mb-6">
+                <label for="password" class="block text-gray-300 text-sm font-semibold mb-2">Password:</label>
+                <input type="password" id="password" class="w-full p-3 rounded-lg bg-gray-700 text-white border border-gray-600 focus:outline-none focus:border-cyan-400 transition duration-300" placeholder="Enter your password">
+            </div>
+            <button id="login-btn" class="w-full bg-gradient-to-r from-white-600 to-cyan-500 text-white p-3 rounded-lg font-bold text-lg hover:from-white-700 hover:to-cyan-600 transition duration-300 ease-in-out transform hover:scale-105">Login</button>
+            <p id="login-error-msg" class="text-red-400 text-center mt-4 text-sm hidden">Invalid username or password.</p>
+        </div>
+    </div>
+
+    <!-- Main Dashboard -->
+    <div id="dashboard-main-content" class="container hidden">
+        <header>
+            <div class="logo">
+                <div class="logo-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-cyan-300" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd" />
+                    </svg>
+                </div>
+                <div class="logo-text">
+                    <h1>BETA ONE</h1>
+                    <p>Advanced Lung Diagnostic System</p>
+                </div>
+            </div>
+            <div id="connection-status">Disconnected</div>
+        </header>
+
+        <div class="dashboard-grid">
+            <!-- Left Column -->
+            <div class="flex flex-col gap-6">
+                <div class="card">
+                    <h2 class="card-header">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                        </svg>
+                        Connection
+                    </h2>
+                    <select id="port-select">
+                        <option value="">Select port...</option>
+                        <option value="/dev/ttyACM0">/dev/ttyACM0</option>
+                        <option value="/dev/ttyUSB0">/dev/ttyUSB0</option>
+                        <option value="COM3">COM3</option>
+                        <option value="COM5">COM5 (Bluetooth)</option>
+                    </select>
+                    <button id="connect-btn" class="btn btn-primary">Connect</button>
+                    <button id="start-recording-btn" class="btn btn-secondary" disabled>Start Recording</button>
+                </div>
+
+                <div class="card">
+                    <h2 class="card-header">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                        </svg>
+                        Microphones
+                    </h2>
+                    <div class="mic-grid" id="mic-grid"></div>
+                </div>
+
+                <div class="card flex-grow">
+                    <h2 class="card-header">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                        </svg>
+                        Analysis
+                    </h2>
+                    <div id="analysis-results" class="analysis-content">
+                        <div class="metric">
+                            <div class="metric-label">Breath Pattern</div>
+                            <div class="metric-value" id="breath-pattern">Normal</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Respiratory Rate</div>
+                            <div class="metric-value" id="resp-rate">14 bpm</div>
+                            <div class="metric-bar">
+                                <div class="metric-fill" id="resp-rate-fill" style="width: 70%;"></div>
+                            </div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Dominant Frequency</div>
+                            <div class="metric-value" id="dom-freq">220 Hz</div>
+                            <div class="metric-bar">
+                                <div class="metric-fill" id="dom-freq-fill" style="width: 45%;"></div>
+                            </div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Lung Capacity</div>
+                            <div class="metric-value" id="lung-capacity">85%</div>
+                            <div class="metric-bar">
+                                <div class="metric-fill" id="lung-capacity-fill" style="width: 85%;"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Center Column -->
+            <div class="card relative">
+                <h2 class="card-header" id="lung-viz-header">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
+                    </svg>
+                    Lung Visualization
+                </h2>
+                <div id="lung-viz-container">
+                    <div id="lung-svg-container">
+                        <svg id="lung-svg" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+                            <rect x="95" y="0" width="10" height="20" fill="#a0a0a0" />
+                            <path d="M100 20 L95 25 A5 5 0 0 0 105 25 L100 20 Z" fill="#a0a0a0" />
+                            
+                            <path id="lung-left-upper-anterior" data-mic-region="Left Upper Lobe (Anterior)" d="M95 25 C80 15 60 25 50 45 C40 65 40 85 50 100 C60 115 75 110 85 100 C90 95 95 85 95 70 C95 55 95 40 95 25 Z" />
+                            <path id="lung-left-upper-posterior" data-mic-region="Left Upper Lobe (Posterior)" d="M50 45 C45 55 35 70 30 90 C25 110 30 130 40 145 C50 155 60 150 70 140 C65 130 60 115 50 100 C40 85 40 65 50 45 Z" />
+                            <path id="lung-left-lower-anterior" data-mic-region="Left Lower Lobe (Anterior)" d="M95 70 C90 85 85 100 80 115 C75 130 70 140 65 150 C60 160 55 170 50 175 C45 170 40 160 35 150 C40 140 45 130 50 115 C60 100 70 85 95 70 Z" />
+                            <path id="lung-left-lower-posterior" data-mic-region="Left Lower Lobe (Posterior)" d="M30 90 C25 105 20 120 25 140 C30 160 40 180 50 185 C60 180 70 160 75 140 C70 130 65 115 60 100 C50 85 40 70 30 90 Z" />
+                            
+                            <path id="lung-right-upper-anterior" data-mic-region="Right Upper Lobe (Anterior)" d="M105 25 C120 15 140 25 150 45 C160 65 160 85 150 100 C140 115 125 110 115 100 C110 95 105 85 105 70 C105 55 105 40 105 25 Z" />
+                            <path id="lung-right-upper-posterior" data-mic-region="Right Upper Lobe (Posterior)" d="M150 45 C155 55 165 70 170 90 C175 110 170 130 160 145 C150 155 140 150 130 140 C135 130 140 115 150 100 C160 85 160 65 150 45 Z" />
+                            <path id="lung-right-middle" data-mic-region="Right Middle Lobe" d="M105 70 C110 85 115 100 120 115 C125 130 130 140 135 150 C140 160 145 170 150 175 C155 170 160 160 165 150 C160 140 155 130 150 115 C140 100 130 85 105 70 Z" />
+                            <path id="lung-right-lower-posterior" data-mic-region="Right Lower Lobe (Posterior)" d="M170 90 C175 105 180 120 175 140 C170 160 160 180 150 185 C140 180 130 160 125 140 C130 130 135 115 140 100 C150 85 160 70 170 90 Z" />
+                        </svg>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column -->
+            <div class="flex flex-col gap-6">
+                <div class="card">
+                    <h2 class="card-header clickable" id="waveform-spectrum-header">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 8v8m-4-5v5m-4-2v2m-2 4h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                        Waveform & Spectrum
+                    </h2>
+                    <div class="chart-container" id="waveform-chart-container">
+                        <canvas id="waveform-chart"></canvas>
+                    </div>
+                    <div class="chart-container" id="fft-chart-container">
+                        <canvas id="fft-chart"></canvas>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h2 class="card-header clickable" id="mic-array-heatmap-header">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z" />
+                        </svg>
+                        Mic Array Heatmap
+                    </h2>
+                    <div class="heatmap-container" id="mic-heatmap-container"></div>
+                </div>
+
+                <div class="card flex-grow">
+                    <h2 class="card-header">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+                        </svg>
+                        Serial Console
+                    </h2>
+                    <div id="serial-console" class="serial-console">
+                        <div class="console-line">> System initialized</div>
+                        <div class="console-line">> Diagnostic modules loaded</div>
+                        <div class="console-line">> Waiting for hardware connection...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Full Screen Display -->
+        <div id="main-display-area" class="main-display-area">
+            <h1 class="display-header" id="main-display-header">Full View</h1>
+            <div id="main-display-content"></div>
+            <button id="main-display-back-btn" class="back-btn">Back to Dashboard</button>
+        </div>
+
+        <footer>
+            <p>BETA ONE Medical Diagnostic System v3.0 | &copy; 2023 Pulmonary Diagnostics Inc.</p>
+        </footer>
+    </div>
+
+    <script>
+        // Initialize app state
+        const state = {
+            selectedMic: null,
+            isConnected: false,
+            waveformChart: null,
+            fftChart: null,
+            micDataInterval: null,
+            micConnectivityInterval: null,
+            heatmapInterval: null,
+            connectedMics: new Set(),
+            lastHighlightedLungRegion: null,
+            originalParents: {
+                waveformChartContainer: null,
+                fftChartContainer: null,
+                micHeatmapContainer: null
+            }
+        };
+
+        // DOM elements references
+        const elements = {
+            connectBtn: document.getElementById('connect-btn'),
+            portSelect: document.getElementById('port-select'),
+            micGrid: document.getElementById('mic-grid'),
+            micHeatmapContainer: document.getElementById('mic-heatmap-container'),
+            micHeatmapHeader: document.getElementById('mic-array-heatmap-header'),
+            connectionStatus: document.getElementById('connection-status'),
+            serialConsole: document.getElementById('serial-console'),
+            startRecordingBtn: document.getElementById('start-recording-btn'),
+            waveformChartCanvas: document.getElementById('waveform-chart'),
+            fftChartCanvas: document.getElementById('fft-chart'),
+            waveformChartContainer: document.getElementById('waveform-chart-container'),
+            fftChartContainer: document.getElementById('fft-chart-container'),
+            waveformSpectrumHeader: document.getElementById('waveform-spectrum-header'),
+            lungSvg: document.getElementById('lung-svg'),
+            
+            // Full screen display elements
+            mainDisplayArea: document.getElementById('main-display-area'),
+            mainDisplayHeader: document.getElementById('main-display-header'),
+            mainDisplayContent: document.getElementById('main-display-content'),
+            mainDisplayBackBtn: document.getElementById('main-display-back-btn'),
+            
+            // Login elements
+            loginContainer: document.getElementById('login-container'),
+            loginCard: document.getElementById('login-card'),
+            usernameInput: document.getElementById('username'),
+            passwordInput: document.getElementById('password'),
+            loginBtn: document.getElementById('login-btn'),
+            loginErrorMsg: document.getElementById('login-error-msg'),
+            dashboardMainContent: document.getElementById('dashboard-main-content')
+        };
+
+        // Mic-to-Lung Region Mapping
+        const micToLungRegionMap = {
+            'Mic 1': 'lung-left-upper-anterior',
+            'Mic 2': 'lung-right-upper-anterior',
+            'Mic 3': 'lung-left-upper-posterior',
+            'Mic 4': 'lung-right-upper-posterior',
+            'Mic 5': 'lung-left-lower-anterior',
+            'Mic 6': 'lung-right-middle',
+            'Mic 7': 'lung-left-lower-posterior',
+            'Mic 8': 'lung-right-lower-posterior'
+        };
+
+        // Utility Functions
+        function appendToSerialConsole(message, type = 'info') {
+            const consoleDiv = elements.serialConsole;
+            const line = document.createElement('div');
+            line.classList.add('console-line');
+            
+            if (type === 'error') {
+                line.style.color = '#ef4444';
+            } else if (type === 'success') {
+                line.style.color = '#10b981';
+            } else if (type === 'warn') {
+                line.style.color = '#f59e0b';
+            }
+            
+            line.textContent = `> ${message}`;
+            consoleDiv.appendChild(line);
+            consoleDiv.scrollTop = consoleDiv.scrollHeight;
+        }
+
+        function updateConnectionStatus(connected) {
+            state.isConnected = connected;
+            if (connected) {
+                elements.connectionStatus.textContent = 'Connected';
+                elements.connectionStatus.classList.remove('bg-red-700');
+                elements.connectionStatus.classList.add('bg-green-600', 'connected');
+                elements.startRecordingBtn.disabled = false;
+                appendToSerialConsole('Connection established successfully.', 'success');
+            } else {
+                elements.connectionStatus.textContent = 'Disconnected';
+                elements.connectionStatus.classList.remove('bg-green-600', 'connected');
+                elements.connectionStatus.classList.add('bg-red-700');
+                elements.startRecordingBtn.disabled = true;
+                appendToSerialConsole('Disconnected from device.', 'error');
+            }
+        }
+
+        // Lung Visualization Functions
+        function highlightLungRegion(micName) {
+            // Reset previous highlight
+            if (state.lastHighlightedLungRegion) {
+                state.lastHighlightedLungRegion.classList.remove('highlighted');
+            }
+            
+            const lungRegionId = micToLungRegionMap[micName];
+            if (lungRegionId) {
+                const lungPath = document.getElementById(lungRegionId);
+                if (lungPath) {
+                    lungPath.classList.add('highlighted');
+                    state.lastHighlightedLungRegion = lungPath;
+                    appendToSerialConsole(`Highlighted lung region: ${lungPath.dataset.micRegion}`, 'info');
+                }
+            }
+        }
+
+        // Mic Button Generation
+        function generateMicButtons() {
+            elements.micGrid.innerHTML = '';
+            const micNames = Object.keys(micToLungRegionMap);
+
+            micNames.forEach(micName => {
+                const micBtn = document.createElement('div');
+                micBtn.classList.add('mic-btn');
+                micBtn.dataset.micName = micName;
+                micBtn.innerHTML = `
+                    <div class="mic-indicator"></div>
+                    <div class="mic-name">${micName}</div>
+                    <div class="mic-label">Inactive</div>
+                `;
+                elements.micGrid.appendChild(micBtn);
+
+                micBtn.addEventListener('click', () => {
+                    document.querySelectorAll('.mic-btn').forEach(btn => {
+                        btn.classList.remove('active');
+                    });
+                    micBtn.classList.add('active');
+                    state.selectedMic = micName;
+                    appendToSerialConsole(`Selected microphone: ${micName}`);
+                    highlightLungRegion(micName);
+                });
+            });
+        }
+
+        function updateMicConnectivity() {
+            elements.micGrid.querySelectorAll('.mic-btn').forEach(micBtn => {
+                const micName = micBtn.dataset.micName;
+                const indicator = micBtn.querySelector('.mic-indicator');
+                const label = micBtn.querySelector('.mic-label');
+
+                const isConnected = Math.random() > 0.3;
+                if (isConnected && !state.connectedMics.has(micName)) {
+                    state.connectedMics.add(micName);
+                    indicator.classList.add('connected');
+                    label.textContent = 'Connected';
+                } else if (!isConnected && state.connectedMics.has(micName)) {
+                    state.connectedMics.delete(micName);
+                    indicator.classList.remove('connected');
+                    label.textContent = 'Disconnected';
+                    appendToSerialConsole(`${micName} disconnected.`, 'warn');
+                }
+            });
+        }
+
+        // Analysis Data Update
+        function updateAnalysisDisplay() {
+            const breathPatterns = ["Normal", "Shallow", "Deep", "Irregular"];
+            const respiratoryRates = [12, 14, 16, 18, 20];
+            const dominantFrequencies = [200, 220, 250, 280];
+            const lungCapacities = [80, 85, 90, 95];
+
+            document.getElementById('breath-pattern').textContent = 
+                breathPatterns[Math.floor(Math.random() * breathPatterns.length)];
+
+            const respRateVal = respiratoryRates[Math.floor(Math.random() * respiratoryRates.length)];
+            document.getElementById('resp-rate').textContent = `${respRateVal} bpm`;
+            document.getElementById('resp-rate-fill').style.width = `${(respRateVal / 25) * 100}%`;
+
+            const domFreqVal = dominantFrequencies[Math.floor(Math.random() * dominantFrequencies.length)];
+            document.getElementById('dom-freq').textContent = `${domFreqVal} Hz`;
+            document.getElementById('dom-freq-fill').style.width = `${(domFreqVal / 300) * 100}%`;
+
+            const lungCapacityVal = lungCapacities[Math.floor(Math.random() * lungCapacities.length)];
+            document.getElementById('lung-capacity').textContent = `${lungCapacityVal}%`;
+            document.getElementById('lung-capacity-fill').style.width = `${lungCapacityVal}%`;
+        }
+
+        // Chart Initialization and Update
+        function initCharts() {
+            // Waveform Chart
+            state.waveformChart = new Chart(elements.waveformChartCanvas, {
+                type: 'line',
+                data: {
+                    labels: Array.from({ length: 50 }, (_, i) => i),
+                    datasets: [{
+                        label: 'Audio Waveform',
+                        data: Array.from({ length: 50 }, () => 0),
+                        borderColor: '#38bdf8',
+                        borderWidth: 1,
+                        fill: false,
+                        pointRadius: 0
+                    }]
+                },
+                options: {
+                    animation: { duration: 0 },
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: { display: false },
+                        y: {
+                            min: -1,
+                            max: 1,
+                            ticks: { color: '#cbd5e1' },
+                            grid: { color: 'rgba(94, 234, 212, 0.1)' }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        title: {
+                            display: true,
+                            text: 'Real-time Waveform',
+                            color: '#e2e8f0',
+                            font: { size: 16 }
+                        }
+                    }
+                }
+            });
+
+            // FFT Chart
+            state.fftChart = new Chart(elements.fftChartCanvas, {
+                type: 'line',
+                data: {
+                    labels: Array.from({ length: 50 }, (_, i) => i * 100),
+                    datasets: [{
+                        label: 'Frequency Spectrum',
+                        data: Array.from({ length: 50 }, () => 0),
+                        borderColor: '#f0abfc',
+                        borderWidth: 1,
+                        fill: true,
+                        backgroundColor: 'rgba(240, 171, 252, 0.2)',
+                        pointRadius: 0
+                    }]
+                },
+                options: {
+                    animation: { duration: 0 },
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Frequency (Hz)',
+                                color: '#e2e8f0'
+                            },
+                            ticks: { color: '#cbd5e1' },
+                            grid: { color: 'rgba(94, 234, 212, 0.1)' }
+                        },
+                        y: {
+                            min: 0,
+                            max: 1,
+                            ticks: { color: '#cbd5e1' },
+                            grid: { color: 'rgba(94, 234, 212, 0.1)' }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        title: {
+                            display: true,
+                            text: 'Frequency Spectrum (FFT)',
+                            color: '#e2e8f0',
+                            font: { size: 16 }
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateChartData() {
+            if (!state.isConnected) return;
+
+            const waveformData = Array.from({ length: 50 }, (_, i) => 
+                Math.sin(i * 0.5 + Math.random() * 0.5) * 0.5 + Math.random() * 0.1 - 0.05
+            );
+            state.waveformChart.data.datasets[0].data = waveformData;
+            state.waveformChart.update();
+
+            const fftData = Array.from({ length: 50 }, (_, i) => {
+                const freq = i * 100;
+                return Math.max(0, (Math.sin(freq / 200) * 0.5 + 0.5) * (1 - freq / 5000) + Math.random() * 0.05);
+            });
+            state.fftChart.data.datasets[0].data = fftData;
+            state.fftChart.update();
+        }
+
+        // Heatmap Functions
+        function generateHeatmap() {
+            elements.micHeatmapContainer.innerHTML = '';
+            const micNames = Object.keys(micToLungRegionMap);
+            
+            micNames.forEach(micName => {
+                const cell = document.createElement('div');
+                cell.classList.add('heatmap-cell');
+                cell.dataset.micName = micName;
+                cell.innerHTML = `
+                    <div class="mic-name text-sm text-gray-300">${micName.replace('Mic ', 'M')}</div>
+                    <div class="heatmap-value text-cyan-300">0</div>
+                `;
+                elements.micHeatmapContainer.appendChild(cell);
+            });
+        }
+
+        function updateHeatmapData() {
+            if (!state.isConnected) return;
+
+            elements.micHeatmapContainer.querySelectorAll('.heatmap-cell').forEach(cell => {
+                const valueDiv = cell.querySelector('.heatmap-value');
+                const randomValue = Math.floor(Math.random() * 100);
+                valueDiv.textContent = randomValue;
+
+                const hue = (1 - (randomValue / 100)) * 120;
+                cell.style.backgroundColor = `hsla(${hue}, 70%, 40%, 0.7)`;
+                cell.classList.remove('active');
+            });
+
+            if (state.selectedMic) {
+                const selectedCell = elements.micHeatmapContainer.querySelector(
+                    `.heatmap-cell[data-mic-name="${state.selectedMic}"]`
+                );
+                if (selectedCell) {
+                    selectedCell.classList.add('active');
+                }
+            }
+        }
+
+        // Full Screen Display Functions
+        function showFullScreenDisplay(type) {
+            // Store original parents
+            state.originalParents.waveformChartContainer = elements.waveformChartContainer.parentNode;
+            state.originalParents.fftChartContainer = elements.fftChartContainer.parentNode;
+            state.originalParents.micHeatmapContainer = elements.micHeatmapContainer.parentNode;
+            
+            elements.mainDisplayContent.innerHTML = '';
+            
+            if (type === 'waveform') {
+                elements.mainDisplayHeader.textContent = 'Waveform & Spectrum Full View';
+                elements.mainDisplayContent.appendChild(elements.waveformChartContainer);
+                elements.mainDisplayContent.appendChild(elements.fftChartContainer);
+            } else if (type === 'heatmap') {
+                elements.mainDisplayHeader.textContent = 'Mic Array Heatmap Full View';
+                elements.mainDisplayContent.appendChild(elements.micHeatmapContainer);
+            }
+            
+            elements.mainDisplayArea.classList.add('active');
+        }
+
+        function hideFullScreenDisplay() {
+            // Move elements back to their original positions
+            if (state.originalParents.waveformChartContainer) {
+                state.originalParents.waveformChartContainer.appendChild(elements.waveformChartContainer);
+            }
+            if (state.originalParents.fftChartContainer) {
+                state.originalParents.fftChartContainer.appendChild(elements.fftChartContainer);
+            }
+            if (state.originalParents.micHeatmapContainer) {
+                state.originalParents.micHeatmapContainer.appendChild(elements.micHeatmapContainer);
+            }
+            
+            elements.mainDisplayArea.classList.remove('active');
+            state.originalParents = {
+                waveformChartContainer: null,
+                fftChartContainer: null,
+                micHeatmapContainer: null
+            };
+        }
+
+        // Event Listeners
+        elements.loginBtn.addEventListener('click', () => {
+            const username = elements.usernameInput.value;
+            const password = elements.passwordInput.value;
+
+            if (username === 'beta' && password === 'beta1') {
+                elements.loginContainer.style.opacity = 0;
+                setTimeout(() => {
+                    elements.loginContainer.classList.add('hidden');
+                    elements.dashboardMainContent.classList.remove('hidden');
+                }, 500);
+                appendToSerialConsole('Login successful. Welcome, Admin!', 'success');
+            } else {
+                elements.loginErrorMsg.classList.remove('hidden');
+                appendToSerialConsole('Login failed: Invalid credentials.', 'error');
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            elements.loginCard.classList.add('scale-100');
+            generateMicButtons();
+            generateHeatmap();
+            initCharts();
+        });
+
+        elements.connectBtn.addEventListener('click', () => {
+            const selectedPort = elements.portSelect.value;
+            if (selectedPort) {
+                appendToSerialConsole(`Attempting to connect to ${selectedPort}...`);
+                setTimeout(() => {
+                    updateConnectionStatus(true);
+                    state.micDataInterval = setInterval(updateChartData, 200);
+                    state.micConnectivityInterval = setInterval(updateMicConnectivity, 5000);
+                    state.heatmapInterval = setInterval(updateHeatmapData, 1000);
+                    updateAnalysisDisplay();
+                }, 2000);
+            } else {
+                appendToSerialConsole('Please select a serial port.', 'warn');
+            }
+        });
+
+        elements.startRecordingBtn.addEventListener('click', () => {
+            if (state.isConnected) {
+                if (elements.startRecordingBtn.textContent === 'Start Recording') {
+                    elements.startRecordingBtn.textContent = 'Stop Recording';
+                    elements.startRecordingBtn.classList.remove('btn-secondary');
+                    elements.startRecordingBtn.classList.add('bg-red-500', 'hover:bg-red-600');
+                    appendToSerialConsole('Recording started.', 'info');
+                } else {
+                    elements.startRecordingBtn.textContent = 'Start Recording';
+                    elements.startRecordingBtn.classList.remove('bg-red-500', 'hover:bg-red-600');
+                    elements.startRecordingBtn.classList.add('btn-secondary');
+                    appendToSerialConsole('Recording stopped. Data saved.', 'info');
+                }
+            }
+        });
+
+        // Full screen display events
+        elements.waveformSpectrumHeader.addEventListener('click', () => showFullScreenDisplay('waveform'));
+        elements.micHeatmapHeader.addEventListener('click', () => showFullScreenDisplay('heatmap'));
+        elements.mainDisplayBackBtn.addEventListener('click', hideFullScreenDisplay);
+    </script>
+</body>
+</html>
